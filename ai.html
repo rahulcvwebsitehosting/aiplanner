@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f1f1f1;padding:10px;margin:0}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.15);padding:18px;margin:12px auto;max-width:600px}
+h1{margin:0 0 12px;font-size:1.5rem;color:#00c9a7;text-align:center}
+label{font-weight:600}
+input,select{width:100%;padding:8px;margin:6px 0;border:1px solid #ccc;border-radius:4px}
+button{width:100%;padding:10px;background:#00c9a7;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer}
+#status{text-align:center;font-weight:700;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🌿 Zero-Waste AI Planner</h1>
+
+  <label>Event name</label>
+  <input id="ename" placeholder="e.g. TechFest 2025">
+
+  <label>Expected attendees</label>
+  <input type="number" id="att" min="1" value="200">
+
+  <label>Meal type</label>
+  <select id="meal">
+    <option value="snacks">Snacks only</option>
+    <option value="breakfast">Breakfast</option>
+    <option value="lunch">Lunch</option>
+    <option value="dinner">Dinner</option>
+  </select>
+
+  <label><input type="checkbox" id="oil"> Has fried food / oil</label>
+  <label><input type="checkbox" id="liq"> Has liquid refreshment</label>
+
+  <!-- AI COUNTER -->
+  <div class="card" style="margin-top:15px">
+    <h2>📸 AI Plate Counter</h2>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button id="pickBtn">Choose photo</button>
+    <div id="status"></div>
+  </div>
+
+  <button id="genBtn">Generate Plan 🚀</button>
+</div>
+
+<script>
+/* ----------  model  ---------- */
+let model;
+cocoSSD.load().then(m => model = m);
+
+/* ----------  file picker  ---------- */
+const fileInput = document.getElementById('fileInput');
+const pickBtn   = document.getElementById('pickBtn');
+const status    = document.getElementById('status');
+const attInput  = document.getElementById('att');
+
+pickBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  img.onload = async () => {
+    const predictions = await model.detect(img);
+    const people = predictions.filter(p => p.class === 'person');
+    const count = people.length;
+    if (count > 0) {
+      attInput.value = count;
+      status.textContent = `✅ Detected ${count} people. Attendees updated!`;
+    } else {
+      status.textContent = `❌ No people found. Try another photo.`;
+    }
+  };
+});
+
+/* ----------  planner  ---------- */
+document.getElementById('genBtn').addEventListener('click', () => {
+  const n = parseInt(attInput.value);
+  if (!n) { status.textContent = 'Please enter attendees'; return; }
+  status.textContent = `Planner logic here for ${n} people. Ready for next AI feature?`;
+});
+</script>
+</body>
+</html>
