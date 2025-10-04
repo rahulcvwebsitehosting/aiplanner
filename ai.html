@@ -18,14 +18,14 @@ label{display:block;margin:10px 0 4px;font-weight:600;color:var(--dark)}
 input,select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:1rem}
 button{width:100%;padding:14px;border:none;border-radius:10px;background:var(--prime);color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;transition:.25s}
 button:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,201,167,.4)}
+button:active{transform:translateY(0)}
 #pickBtn{background:var(--sec);color:var(--dark)}
-#status{text-align:center;font-weight:700;margin-top:10px}
-#starter{position:fixed;inset:0;background:transparent;z-index:9999;cursor:pointer}
+#status{text-align:center;font-weight:700;margin-top:10px;white-space:pre-line}
+.file-input-wrapper{position:relative;overflow:hidden;display:inline-block;width:100%}
+.file-input-wrapper input[type=file]{position:absolute;left:-9999px}
 </style>
 </head>
 <body>
-<!-- one-time tap shield (invisible after first click) -->
-<div id="starter"></div>
 
 <div class="card">
   <h1>🌿 Zero-Waste AI Planner</h1>
@@ -55,56 +55,135 @@ button:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,201,167,.4)
   <!-- AI COUNTER -->
   <div class="card" style="margin-top:15px">
     <h2>📸 AI Plate Counter</h2>
-    <input type="file" id="fileInput" accept="image/*" style="display:none">
-    <button id="pickBtn">Choose photo</button>
+    <div class="file-input-wrapper">
+      <button id="pickBtn" type="button">Choose photo</button>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
     <div id="status"></div>
   </div>
 
-  <button id="genBtn">Generate Plan 🚀</button>
+  <button id="genBtn" type="button">Generate Plan 🚀</button>
 </div>
 
 <script>
-/* ----------  unblock file picker  ---------- */
-document.getElementById('starter').addEventListener('click', () => {
-  document.getElementById('starter').style.display = 'none';
-}, {once: true});
-
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+  
 /* ----------  model  ---------- */
-let model;
-cocoSSD.load().then(m => model = m);
+let model = null;
+let modelLoaded = false;
+
+const status = document.getElementById('status');
+status.textContent = '⏳ Loading AI model...';
+
+cocoSsd.load().then(m => {
+  model = m;
+  modelLoaded = true;
+  status.textContent = '✅ AI model ready!';
+  console.log('Model loaded successfully');
+  setTimeout(() => { status.textContent = ''; }, 2000);
+}).catch(err => {
+  console.error('Model loading error:', err);
+  status.textContent = '⚠️ AI model failed to load. You can still use manual entry.';
+});
 
 /* ----------  file picker  ---------- */
 const fileInput = document.getElementById('fileInput');
-const pickBtn   = document.getElementById('pickBtn');
-const status    = document.getElementById('status');
-const attInput  = document.getElementById('att');
+const pickBtn = document.getElementById('pickBtn');
+const attInput = document.getElementById('att');
 
-pickBtn.addEventListener('click', () => fileInput.click());
-
-fileInput.addEventListener('change', e => {
+// Direct file input change handler
+fileInput.addEventListener('change', function(e) {
+  console.log('File input changed');
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) {
+    console.log('No file selected');
+    return;
+  }
+  
+  console.log('File selected:', file.name);
+  
+  if (!modelLoaded || !model) {
+    status.textContent = '⏳ AI model still loading, please wait...';
+    return;
+  }
+  
+  status.textContent = '🔄 Analyzing image...';
+  
   const img = new Image();
   img.src = URL.createObjectURL(file);
-  img.onload = async () => {
-    const predictions = await model.detect(img);
-    const people = predictions.filter(p => p.class === 'person');
-    const count = people.length;
-    if (count > 0) {
-      attInput.value = count;
-      status.textContent = `✅ Detected ${count} people. Attendees updated!`;
-    } else {
-      status.textContent = `❌ No people found. Try another photo.`;
+  img.onload = async function() {
+    try {
+      console.log('Image loaded, detecting...');
+      const predictions = await model.detect(img);
+      console.log('Predictions:', predictions);
+      
+      const people = predictions.filter(p => p.class === 'person');
+      const count = people.length;
+      
+      if (count > 0) {
+        attInput.value = count;
+        status.textContent = `✅ Detected ${count} people. Attendees updated!`;
+      } else {
+        status.textContent = `❌ No people found. Try another photo or enter manually.`;
+      }
+    } catch (err) {
+      console.error('Detection error:', err);
+      status.textContent = '❌ Error analyzing image. Please try again.';
     }
+    
+    // Clean up
+    URL.revokeObjectURL(img.src);
+  };
+  
+  img.onerror = function() {
+    status.textContent = '❌ Error loading image. Please try another file.';
   };
 });
 
-/* ----------  planner  ---------- */
-document.getElementById('genBtn').addEventListener('click', () => {
-  const n = parseInt(attInput.value);
-  if (!n) { status.textContent = 'Please enter attendees'; return; }
-  status.textContent = `Planner logic here for ${n} people. Ready for next AI feature?`;
+// Button click handler
+pickBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  console.log('Pick button clicked');
+  fileInput.click();
 });
+
+/* ----------  planner  ---------- */
+document.getElementById('genBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  const n = parseInt(attInput.value);
+  const eventName = document.getElementById('ename').value || 'Your Event';
+  const mealType = document.getElementById('meal').value;
+  const hasOil = document.getElementById('oil').checked;
+  const hasLiquid = document.getElementById('liq').checked;
+  
+  if (!n || n < 1) { 
+    status.textContent = '⚠️ Please enter valid number of attendees'; 
+    return; 
+  }
+  
+  // Calculate supplies needed (with 10% buffer)
+  const plates = Math.ceil(n * 1.1);
+  const cups = hasLiquid ? Math.ceil(n * 1.15) : 0;
+  const napkins = Math.ceil(n * 1.2);
+  
+  let plan = `✅ Plan for "${eventName}"\n`;
+  plan += `👥 Attendees: ${n}\n`;
+  plan += `🍽️ Meal: ${mealType}\n\n`;
+  plan += `📦 Supplies Needed:\n`;
+  plan += `• Plates: ${plates}\n`;
+  if (hasLiquid) plan += `• Cups: ${cups}\n`;
+  plan += `• Napkins: ${napkins}\n`;
+  if (hasOil) plan += `• Oil disposal bags: ${Math.ceil(n/50)}\n`;
+  
+  status.textContent = plan;
+  console.log('Plan generated');
+});
+
+console.log('Event listeners attached');
+
+}); // End DOMContentLoaded
 </script>
 </body>
 </html>
