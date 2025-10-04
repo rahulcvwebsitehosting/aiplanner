@@ -20,9 +20,12 @@ button{width:100%;padding:14px;border:none;border-radius:10px;background:var(--p
 button:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,201,167,.4)}
 #pickBtn{background:var(--sec);color:var(--dark)}
 #status{text-align:center;font-weight:700;margin-top:10px}
+#starter{position:fixed;inset:0;background:transparent;z-index:9999;cursor:pointer}
 </style>
 </head>
 <body>
+<!-- one-time tap shield (invisible after first click) -->
+<div id="starter"></div>
 
 <div class="card">
   <h1>🌿 Zero-Waste AI Planner</h1>
@@ -61,6 +64,11 @@ button:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,201,167,.4)
 </div>
 
 <script>
+/* ----------  unblock file picker  ---------- */
+document.getElementById('starter').addEventListener('click', () => {
+  document.getElementById('starter').style.display = 'none';
+}, {once: true});
+
 /* ----------  model  ---------- */
 let model;
 cocoSSD.load().then(m => model = m);
