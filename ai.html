@@ -3,17 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Planner</title>
+<title>Zero-Waste AI Planner</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;background:#f1f1f1;padding:10px;margin:0}
-.card{background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.15);padding:18px;margin:12px auto;max-width:600px}
-h1{margin:0 0 12px;font-size:1.5rem;color:#00c9a7;text-align:center}
-label{font-weight:600}
-input,select{width:100%;padding:8px;margin:6px 0;border:1px solid #ccc;border-radius:4px}
-button{width:100%;padding:10px;background:#00c9a7;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer}
-#status{text-align:center;font-weight:700;margin-top:8px}
+:root{--prime:#00c9a7;--sec:#ffd166;--danger:#ef476f;--dark:#1b1b2f;--light:#f8f9fa;--glass:rgba(255,255,255,.25);--shadow:0 8px 32px rgba(0,0,0,.15)}
+*{box-sizing:border-box;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+body{margin:0;background:linear-gradient(135deg,#00c9a7 0%,#92fe9d 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:15px}
+.card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);border-radius:18px;padding:25px;margin:15px auto;max-width:700px;box-shadow:var(--shadow);animation:fadeUp .6s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}}
+h1,h2{color:var(--dark);margin-top:0}
+h1{font-size:2rem;text-align:center}
+label{display:block;margin:10px 0 4px;font-weight:600;color:var(--dark)}
+input,select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:1rem}
+button{width:100%;padding:14px;border:none;border-radius:10px;background:var(--prime);color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;transition:.25s}
+button:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,201,167,.4)}
+#pickBtn{background:var(--sec);color:var(--dark)}
+#status{text-align:center;font-weight:700;margin-top:10px}
 </style>
 </head>
 <body>
@@ -24,16 +30,21 @@ button{width:100%;padding:10px;background:#00c9a7;color:#fff;border:none;border-
   <label>Event name</label>
   <input id="ename" placeholder="e.g. TechFest 2025">
 
-  <label>Expected attendees</label>
-  <input type="number" id="att" min="1" value="200">
-
-  <label>Meal type</label>
-  <select id="meal">
-    <option value="snacks">Snacks only</option>
-    <option value="breakfast">Breakfast</option>
-    <option value="lunch">Lunch</option>
-    <option value="dinner">Dinner</option>
-  </select>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div>
+      <label>Expected attendees</label>
+      <input type="number" id="att" min="1" value="200">
+    </div>
+    <div>
+      <label>Meal type</label>
+      <select id="meal">
+        <option value="snacks">Snacks only</option>
+        <option value="breakfast">Breakfast</option>
+        <option value="lunch">Lunch</option>
+        <option value="dinner">Dinner</option>
+      </select>
+    </div>
+  </div>
 
   <label><input type="checkbox" id="oil"> Has fried food / oil</label>
   <label><input type="checkbox" id="liq"> Has liquid refreshment</label>
